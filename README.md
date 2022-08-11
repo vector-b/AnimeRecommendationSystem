@@ -6,4 +6,4 @@ As we proceed, we will implement the 3 mainly types of Recommendation system, wh
 *   Collaborative
 *   Popularity
 
-Using the same Anime Dataset, which can be found[here](https://www.kaggle.com/datasets/CooperUnion/anime-recommendations-database)
+Using the same Anime Dataset, which can be found [here](https://www.kaggle.com/datasets/CooperUnion/anime-recommendations-database)

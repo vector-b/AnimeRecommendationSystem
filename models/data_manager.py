@@ -3,19 +3,26 @@ import numpy as np
 import difflib
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+import streamlit as st
+import gc
 
 class AnimeRecommendation():
     
     def __init__(self):
 
-        self.anime_data = pd.read_csv("data/animelist.csv")
-        self.anime_list = pd.read_csv("data/anime.csv")
-        self.anime_description = pd.read_csv("data/anime_with_synopsis.csv")
-        
+        #anime_data = pd.read_csv("data/animelist.csv")
+        anime_list = pd.read_csv("data/anime.csv")
+        anime_description = pd.read_csv("data/anime_with_synopsis.csv")
 
-        self.anime_complete = pd.merge(self.anime_list, self.anime_description[["MAL_ID","sypnopsis"]], how='inner', on="MAL_ID")
-        self.features =  ["Name", "Genres", "Episodes","Studios","Rating","Score","Aired","sypnopsis"]
+        self.anime_complete = pd.merge(anime_list, anime_description[["MAL_ID","sypnopsis"]], how='inner', on="MAL_ID")
         
+        #del anime_dat
+        del anime_list
+        del anime_description
+  
+        gc.collect()
+        #self.features =  ["Name", "Genres", "Episodes","Studios","Rating","Score","Aired","sypnopsis"]
+        self.features = ["Name", "Genres", "sypnopsis"]
         self.vectorizer = TfidfVectorizer()
 
     def preprocess_data(self):
@@ -62,13 +69,33 @@ class AnimeRecommendation():
             idx_anime = match_filter.index.values[0]
             return idx_anime
         
+    def get_anime_description_by_name(self, name):
+        return self.anime_complete[self.anime_complete['Name'] == name]['sypnopsis'].iloc[0]
+        
     def similar_animes_by_name(self, name, number):
         idx_anime = self.get_anime_index_by_name(name)
         if idx_anime is None:
-            return "Anime não encontrado..."
+            return None
         else:
             similarity_score = list(enumerate(self.similarity[idx_anime]))
             most_similar_animes = sorted(similarity_score, key=lambda x:x[1], reverse=True)
-            anime_list = [self.anime_complete.loc[anime[0], 'Name'] for anime in most_similar_animes[:number]]
+            anime_names = [self.anime_complete.loc[anime[0], 'Name'] for anime in most_similar_animes[:number]]
+            anime_list = [{"nome": name, "descricao": self.get_anime_description_by_name(name)} for name in anime_names]
+            
             return anime_list
+        
+    def recommendation_by_anime(self):
+        title = st.text_input('Digite o nome do anime: ')
+        number = st.slider('Número de Animes: ', 1, 30, 10)
+
+        if title != "":
+            anime_list = self.similar_animes_by_name(title, number)
+            
+            if anime_list:
+                st.write('Aqui estão algumas recomendações de anime com base no anime escolhido: ')
+                for item in anime_list:
+                    with st.expander(item["nome"]):
+                        st.write(item["descricao"])
+            else:
+                st.write('O anime desejado não foi encontrado, tente novamente...')
 

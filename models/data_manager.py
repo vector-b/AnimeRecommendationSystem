@@ -72,16 +72,3 @@ class AnimeRecommendation():
             anime_list = [self.anime_complete.loc[anime[0], 'Name'] for anime in most_similar_animes[:number]]
             return anime_list
 
-
-
-
-    def get_anime_features(self):
-        
-        pass
-
-    def recommend_anime(self):
-        pass
-    def get_anime_info():
-        pass
-    def get_user_ratings():
-        pass

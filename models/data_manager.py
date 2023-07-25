@@ -62,7 +62,7 @@ class AnimeRecommendation():
         else:
             anime_match = match_list[0]
             idx_anime = self.anime_complete[self.anime_complete.Name == anime_match].index.values[0]
-            return idx_anime
+            return idx_anime, anime_match
         
     def get_anime_index_by_id(self, id):
         id_list = self.anime_complete.MAL_ID.to_list()
@@ -77,7 +77,7 @@ class AnimeRecommendation():
         return self.anime_complete[self.anime_complete['Name'] == name]['sypnopsis'].iloc[0]
         
     def similar_animes_by_name(self, name, number):
-        idx_anime = self.get_anime_index_by_name(name)
+        idx_anime, anime_name = self.get_anime_index_by_name(name)
         if idx_anime is None:
             return None
         else:
@@ -86,31 +86,38 @@ class AnimeRecommendation():
             anime_names = [self.anime_complete.loc[anime[0], 'Name'] for anime in most_similar_animes[:number]]
             anime_list = [{"nome": name, "descricao": self.get_anime_description_by_name(name)} for name in anime_names]
             
-            return anime_list
+            return anime_list, anime_name
     def show_anime_list_expander(self, anime_list):
         if anime_list:
-                st.write('Aqui estão algumas recomendações de anime com base no anime escolhido: ')
+                st.write('Here are some anime recommendations based on the searched anime: ')
                 for item in anime_list:
                     with st.expander(item["nome"]):
                         st.write(item["descricao"])
         else:
-            st.write('O anime desejado não foi encontrado, tente novamente...')
+            st.write('Anime not found, try another query...')
 
     def recommendation_by_anime(self):
-        title = st.text_input('Digite o nome do anime: ')
-        number = st.slider('Número de Animes: ', 1, 30, 10)
-
-        if title != "":
-            anime_list = self.similar_animes_by_name(title, number)
-            
-            self.show_anime_list_expander(anime_list)
+        title = st.text_input('Please enter the name of the anime here: ')
+        number = st.slider('Number of entries: ', 1, 30, 10)
+        try:
+            if title != "":
+                anime_list, anime_name = self.similar_animes_by_name(title, number)
+                st.write(f"Anime found: {anime_name}")
+                self.show_anime_list_expander(anime_list)
+        except Exception as e:
+            st.write('Anime not found, try another query...')
 
 class UserRecommendation(AnimeRecommendation):
     def __init__(self):
         AnimeRecommendation.__init__(self)
-        MAX_USERS = 100
-        user_rating = pd.read_csv("data/animelist.csv").head(100000).sort_values(by=["user_id","anime_id"])
-        unique_users = user_rating['user_id'].unique()[:MAX_USERS]
+        MAX_USERS = 1000
+        user_rating = pd.read_csv("data/animelist.csv").head(200000).sort_values(by=["user_id","anime_id"])
+
+        unique_users = user_rating['user_id'].unique()
+        unique_users = np.random.choice(unique_users, size=min(MAX_USERS, len(unique_users)), replace=False)
+        unique_users = np.sort(unique_users)
+
+
         
         self.unique_users = unique_users
         self.unique_anime = user_rating.anime_id.unique()
@@ -137,7 +144,7 @@ class UserRecommendation(AnimeRecommendation):
         self.user_pivot_table = pd.pivot_table(Rating_avg, values='avg_rating',index='user_id',columns='anime_id')
         self.user_rating = self.user_pivot_table.fillna(self.user_pivot_table.mean(axis=0))
 
-        st.write(Rating_avg)
+        #st.write(Rating_avg)
         Rating_avg = Rating_avg.astype({"anime_id": str})
         self.user_rating_ids = Rating_avg.groupby(by = 'user_id')['anime_id'].apply(lambda x:','.join(x))
 
@@ -155,7 +162,7 @@ class UserRecommendation(AnimeRecommendation):
 
     def user_item_score(self, user, item):
 
-        next_30_users = self.get_most_similar_users(30)
+        next_30_users = self.get_most_similar_users(15)
         a = next_30_users[next_30_users.index==user].values
 
         b = a.squeeze().tolist()
@@ -196,7 +203,7 @@ class UserRecommendation(AnimeRecommendation):
         anime_seen_by_user = self.user_pivot_table.columns[self.user_pivot_table[self.user_pivot_table.index==user].notna().any()].tolist()
         anime_seen_by_user = list(map(str, anime_seen_by_user))
 
-        next_30_users = self.get_most_similar_users(30)
+        next_30_users = self.get_most_similar_users(3)
         a = next_30_users[next_30_users.index==user].values
         b = a.squeeze().tolist()
         d = self.user_rating_ids[self.user_rating_ids.index.isin(b)]
@@ -205,7 +212,7 @@ class UserRecommendation(AnimeRecommendation):
         anime_seen_by_similar_users = list(l.split(','))
 
         animes_under_consideration = self.set_diff(anime_seen_by_similar_users, anime_seen_by_user)
-        animes_under_consideration = list(map(int, animes_under_consideration))
+        animes_under_consideration = list(map(int, filter(lambda x: x.strip(), animes_under_consideration)))
 
         
 
@@ -240,21 +247,21 @@ class UserRecommendation(AnimeRecommendation):
     def get_user_taste_relation(self):
         unique_users = self.unique_users
         unique_anime = self.unique_anime
-        input_value_1 = st.select_slider(
+        input_value_1 = st.selectbox(
             'Selecione a id do usuário: ',
         options=unique_users)
 
-        input_value_2 = st.select_slider(
+        input_value_2 = st.selectbox(
             'Selecione a id do anime: ',
         options=unique_anime)
         
-        st.write(self.user_rating)
+        #st.write(self.user_rating)
         st.write(f"Relação de gosto de usuários {self.user_item_score(input_value_1, input_value_2)}")
 
 
     def get_user_list_recommendation(self):
         unique_users = self.unique_users
-        input_value_1 = st.select_slider(
+        input_value_1 = st.selectbox(
             'Selecione a id do usuário: ',
         options=unique_users)
         input_value_2 = st.slider('Número de Animes: ', 1, 30, 10)

@@ -7,6 +7,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from models.data_manager import AnimeRecommendation, UserRecommendation
 
+st.set_page_config(page_title="App",
+                   page_icon="✨",
+                   layout="centered",
+                   initial_sidebar_state="expanded")
+
 @st.cache_resource
 def load_data():
     AniRec = AnimeRecommendation()
@@ -20,19 +25,21 @@ AniRec, UsrRec = load_data()
 
 
 def app():
-    
-    st.title("Sistema de Recomendação de Animes!")
+
+
+    st.title("Anime Recommendation System!")
 
     opt = st.radio(
-    "Selecione o modo: ",
-    ('Recomendação por Anime', 'Relação Usuário Anime', 'Recomendação Anime User-based'))
+        "Select mode:",
+        ('Recommendation by Anime', 'User-Anime Relationship', 'User-Based Anime Recommendation'))
 
-    if opt == 'Recomendação por Anime':
+    if opt == 'Recommendation by Anime':
         AniRec.recommendation_by_anime()
-    elif opt == 'Relação Usuário Anime':
+    elif opt == 'User-Anime Relationship':
         UsrRec.get_user_taste_relation()
-    elif opt == 'Recomendação Anime User-based':
+    elif opt == 'User-Based Anime Recommendation':
         UsrRec.get_user_list_recommendation()
+
 
 
     

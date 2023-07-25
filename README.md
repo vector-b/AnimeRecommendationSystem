@@ -8,8 +8,6 @@
 - [Features](#features)
 - [Technologies Used](#technologies-used)
 - [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Contributing](#contributing)
 - [License](#license)
 
 ## About
@@ -64,5 +62,5 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-License
+## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -59,7 +59,7 @@ pip install -r requirements.txt
 ```
 3.  Run the Streamlit app:
 ```bash
-streamlit run app.py
+streamlit run App.py
 ```
 
 ## License

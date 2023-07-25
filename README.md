@@ -26,7 +26,7 @@ Our Anime Recommendation System has three main features:
 
 - **Recommendation Based on Similar Users:** Provides anime recommendations based on the preferences of users with similar tastes.
 
-For more details on how the system works, please visit the [How It Works Page](./how_it_works.md).
+For more details on how the system works, please visit the [How It Works Page](.markdown/how_it_works.md).
 
 ## Features
 

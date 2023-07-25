@@ -10,20 +10,24 @@ class AnimeRecommendation():
     
     def __init__(self):
 
-        #anime_data = pd.read_csv("data/animelist.csv")
+        
         anime_list = pd.read_csv("data/anime.csv")
         anime_description = pd.read_csv("data/anime_with_synopsis.csv")
 
         self.anime_complete = pd.merge(anime_list, anime_description[["MAL_ID","sypnopsis"]], how='inner', on="MAL_ID")
         
-        #del anime_dat
         del anime_list
         del anime_description
-  
+
         gc.collect()
+
+
         #self.features =  ["Name", "Genres", "Episodes","Studios","Rating","Score","Aired","sypnopsis"]
         self.features = ["Name", "Genres", "sypnopsis"]
         self.vectorizer = TfidfVectorizer()
+
+    def get_general_similarity(self, data):
+        return cosine_similarity(data)
 
     def preprocess_data(self):
 
@@ -33,7 +37,7 @@ class AnimeRecommendation():
         
         self.feature_vectors = self.vectorizer.fit_transform(featured)
 
-        self.similarity = cosine_similarity(self.feature_vectors)
+        self.similarity = self.get_general_similarity(self.feature_vectors)
 
     def get_cosine_similarity(self, anime_id_1, anime_id_2):
         anime_features = self.similarity
@@ -98,4 +102,93 @@ class AnimeRecommendation():
                         st.write(item["descricao"])
             else:
                 st.write('O anime desejado não foi encontrado, tente novamente...')
+
+class UserRecommendation(AnimeRecommendation):
+    def __init__(self):
+
+        MAX_USERS = 100
+        user_rating = pd.read_csv("data/animelist.csv").head(100000).sort_values(by=["user_id","anime_id"])
+        unique_users = user_rating['user_id'].unique()[:MAX_USERS]
+        
+        self.unique_users = unique_users
+        self.unique_anime = user_rating.anime_id.unique()
+
+        self.user_rating = user_rating[user_rating['user_id'].isin(unique_users)]
+
+        del user_rating
+
+        gc.collect()
+    
+    def get_mean_user_rating(self, df):
+        mean = df.groupby(by="user_id",as_index=False)['rating'].mean()
+        return mean
+    
+    def preprocess_user_data(self):
+
+        Mean = self.get_mean_user_rating(self.user_rating)
+        self.mean = Mean
+        Rating_avg = pd.merge(self.user_rating, Mean, on='user_id')
+        Rating_avg['avg_rating']=Rating_avg['rating_x']-Rating_avg['rating_y']
+
+
+        self.user_rating = pd.pivot_table(Rating_avg, values='avg_rating',index='user_id',columns='anime_id')
+        self.user_rating = self.user_rating.fillna(self.user_rating.mean(axis=0))
+
+        self.cosine = self.get_general_similarity(self.user_rating)
+        np.fill_diagonal(self.cosine,0)
+
+        self.square_rating = pd.DataFrame(self.cosine,index=self.user_rating.index)
+
+    def get_most_similar_users(self, number):
+        #order = np.argsort(self.square_rating, axis=1[:,:number])
+        df = self.square_rating.apply(lambda x: pd.Series(x.sort_values(ascending=False)
+           .iloc[:number].index, 
+          index=['{}'.format(i) for i in range(1, number+1)]), axis=1)
+        return df 
+
+    def user_item_score(self, user, item):
+
+        next_30_users = self.get_most_similar_users(30)
+        a = next_30_users[next_30_users.index==user].values
+
+        b = a.squeeze().tolist()
+        c = self.user_rating.loc[:,item]
+        d = c[c.index.isin(b)]
+
+        #Only the users with the same anime 
+        matched_users = d[d.notnull()]
+
+        index = matched_users.index.values.squeeze().tolist()
+
+        corr = self.square_rating.iloc[user, index]
+
+        # Cria um DataFrame com as classificações e as similaridades
+        user_similarity_df = pd.concat([matched_users, corr], axis=1)
+        user_similarity_df.columns = ['avg_score', 'correlation']
+
+        # Calcula o escore final do usuário para o item usando a fórmula de filtragem colaborativa
+        numerator = (user_similarity_df['avg_score'] * user_similarity_df['correlation']).sum()
+        denominator = user_similarity_df['correlation'].sum()
+
+
+        mean = self.mean
+    
+        avg_user = mean.loc[mean['user_id'] == user,'rating'].values[0]
+
+        final_score = avg_user + (numerator / denominator)
+        return final_score
+
+    def get_user_taste_relation(self):
+        unique_users = self.unique_users
+        unique_anime = self.unique_anime
+        input_value_1 = st.select_slider(
+            'Selecione a  1ª entrada: ',
+        options=unique_users)
+
+        input_value_2 = st.select_slider(
+            'Selecione a  2ª entrada: ',
+        options=unique_anime)
+        
+        st.write(self.user_rating)
+        st.write(f"Relação de gosto de usuários {self.user_item_score(input_value_1, input_value_2)}")
 

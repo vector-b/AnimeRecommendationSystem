@@ -20,11 +20,11 @@ In this project, we have developed an Anime Recommendation System based on user 
 
 Our Anime Recommendation System has three main features:
 
-- **Recomendação por Anime (Anime Recommendation):** Allows users to find animes similar to their favorite anime based on genres, synopsis, and title. Users can specify the number of animes they want to receive as recommendations.
+- **Anime Recommendation:** Allows users to find animes similar to their favorite anime based on genres, synopsis, and title. Users can specify the number of animes they want to receive as recommendations.
 
-- **Comparação Usuário x Anime (User x Anime Comparison):** Enables users to compare their preferences with an anime and get a score indicating how much they might like the anime.
+- **User x Anime Comparison:** Enables users to compare their preferences with an anime and get a score indicating how much they might like the anime.
 
-- **Recomendação com Base em Usuários Similares (Recommendation Based on Similar Users):** Provides anime recommendations based on the preferences of users with similar tastes.
+- **Recommendation Based on Similar Users:** Provides anime recommendations based on the preferences of users with similar tastes.
 
 For more details on how the system works, please visit the [How It Works Page](./how_it_works.md).
 

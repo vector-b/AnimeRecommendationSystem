@@ -1,11 +1,5 @@
 import streamlit as st
-import pandas as pd 
-import numpy as np
-import os
-import difflib
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from models.data_manager import AnimeRecommendation, UserRecommendation
+from models.anime_recommender_utils import AnimeRecommendation, UserRecommendation
 
 st.set_page_config(page_title="App",
                    page_icon="✨",

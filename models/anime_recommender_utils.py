@@ -102,7 +102,7 @@ class AnimeRecommendation():
         try:
             if title != "":
                 anime_list, anime_name = self.similar_animes_by_name(title, number)
-                st.write(f"Anime found: {anime_name}")
+                st.info(f"Anime found: {anime_name}")
                 self.show_anime_list_expander(anime_list)
         except Exception as e:
             st.write('Anime not found, try another query...')

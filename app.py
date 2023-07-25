@@ -25,12 +25,15 @@ def app():
 
     opt = st.radio(
     "Selecione o modo: ",
-    ('Anime', 'User'))
+    ('Recomendação por Anime', 'Relação Usuário Anime', 'Recomendação Anime User-based'))
 
-    if opt == 'Anime':
+    if opt == 'Recomendação por Anime':
         AniRec.recommendation_by_anime()
-    elif opt == 'User':
+    elif opt == 'Relação Usuário Anime':
         UsrRec.get_user_taste_relation()
+    elif opt == 'Recomendação Anime User-based':
+        UsrRec.get_user_list_recommendation()
+
 
     
 

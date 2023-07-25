@@ -87,7 +87,15 @@ class AnimeRecommendation():
             anime_list = [{"nome": name, "descricao": self.get_anime_description_by_name(name)} for name in anime_names]
             
             return anime_list
-        
+    def show_anime_list_expander(self, anime_list):
+        if anime_list:
+                st.write('Aqui estão algumas recomendações de anime com base no anime escolhido: ')
+                for item in anime_list:
+                    with st.expander(item["nome"]):
+                        st.write(item["descricao"])
+        else:
+            st.write('O anime desejado não foi encontrado, tente novamente...')
+
     def recommendation_by_anime(self):
         title = st.text_input('Digite o nome do anime: ')
         number = st.slider('Número de Animes: ', 1, 30, 10)
@@ -95,17 +103,11 @@ class AnimeRecommendation():
         if title != "":
             anime_list = self.similar_animes_by_name(title, number)
             
-            if anime_list:
-                st.write('Aqui estão algumas recomendações de anime com base no anime escolhido: ')
-                for item in anime_list:
-                    with st.expander(item["nome"]):
-                        st.write(item["descricao"])
-            else:
-                st.write('O anime desejado não foi encontrado, tente novamente...')
+            self.show_anime_list_expander(anime_list)
 
 class UserRecommendation(AnimeRecommendation):
     def __init__(self):
-
+        AnimeRecommendation.__init__(self)
         MAX_USERS = 100
         user_rating = pd.read_csv("data/animelist.csv").head(100000).sort_values(by=["user_id","anime_id"])
         unique_users = user_rating['user_id'].unique()[:MAX_USERS]
@@ -126,13 +128,18 @@ class UserRecommendation(AnimeRecommendation):
     def preprocess_user_data(self):
 
         Mean = self.get_mean_user_rating(self.user_rating)
-        self.mean = Mean
+        
         Rating_avg = pd.merge(self.user_rating, Mean, on='user_id')
         Rating_avg['avg_rating']=Rating_avg['rating_x']-Rating_avg['rating_y']
 
+        self.mean = Mean
 
-        self.user_rating = pd.pivot_table(Rating_avg, values='avg_rating',index='user_id',columns='anime_id')
-        self.user_rating = self.user_rating.fillna(self.user_rating.mean(axis=0))
+        self.user_pivot_table = pd.pivot_table(Rating_avg, values='avg_rating',index='user_id',columns='anime_id')
+        self.user_rating = self.user_pivot_table.fillna(self.user_pivot_table.mean(axis=0))
+
+        st.write(Rating_avg)
+        Rating_avg = Rating_avg.astype({"anime_id": str})
+        self.user_rating_ids = Rating_avg.groupby(by = 'user_id')['anime_id'].apply(lambda x:','.join(x))
 
         self.cosine = self.get_general_similarity(self.user_rating)
         np.fill_diagonal(self.cosine,0)
@@ -177,18 +184,79 @@ class UserRecommendation(AnimeRecommendation):
 
         final_score = avg_user + (numerator / denominator)
         return final_score
+    
+    def set_diff(self, list1, list2):
+        set_list1 = set(list1)
+        set_list2 = set(list2)
+
+        diff = list(set_list1 - set_list2)
+        return diff
+    
+    def user_item_list_recommendation(self, user, number):
+        anime_seen_by_user = self.user_pivot_table.columns[self.user_pivot_table[self.user_pivot_table.index==user].notna().any()].tolist()
+        anime_seen_by_user = list(map(str, anime_seen_by_user))
+
+        next_30_users = self.get_most_similar_users(30)
+        a = next_30_users[next_30_users.index==user].values
+        b = a.squeeze().tolist()
+        d = self.user_rating_ids[self.user_rating_ids.index.isin(b)]
+        l = ','.join(d.values)
+        
+        anime_seen_by_similar_users = list(l.split(','))
+
+        animes_under_consideration = self.set_diff(anime_seen_by_similar_users, anime_seen_by_user)
+        animes_under_consideration = list(map(int, animes_under_consideration))
+
+        
+
+        score = []
+        for item in animes_under_consideration:
+            c = self.user_rating.loc[:,item]
+            d = c[c.index.isin(b)]
+            f = d[d.notnull()]
+            avg_user = self.mean.loc[self.mean['user_id'] == user,'rating'].values[0]
+            index = f.index.values.squeeze().tolist()
+            corr = self.square_rating.loc[user,index]
+
+            fin = pd.concat([f, corr], axis=1)
+            fin.columns = ['avg_score','correlation']
+            fin['score']=fin.apply(lambda x:x['avg_score'] * x['correlation'],axis=1)
+            nume = fin['score'].sum()
+            deno = fin['correlation'].sum()
+            final_score = avg_user + (nume/deno)
+            score.append(final_score)
+
+        
+        data = pd.DataFrame({'anime_id':animes_under_consideration,'score':score})
+        top_recommendation = data.sort_values(by='score',ascending=False).head(number)
+        anime_Name = top_recommendation.merge(self.anime_complete, how='inner', left_on='anime_id', right_on='MAL_ID')
+        anime_name_list = anime_Name.Name.values.tolist()
+
+        anime_list = [{"nome": name, "descricao": self.get_anime_description_by_name(name)} for name in anime_name_list]
+
+        return anime_list
+
 
     def get_user_taste_relation(self):
         unique_users = self.unique_users
         unique_anime = self.unique_anime
         input_value_1 = st.select_slider(
-            'Selecione a  1ª entrada: ',
+            'Selecione a id do usuário: ',
         options=unique_users)
 
         input_value_2 = st.select_slider(
-            'Selecione a  2ª entrada: ',
+            'Selecione a id do anime: ',
         options=unique_anime)
         
         st.write(self.user_rating)
         st.write(f"Relação de gosto de usuários {self.user_item_score(input_value_1, input_value_2)}")
 
+
+    def get_user_list_recommendation(self):
+        unique_users = self.unique_users
+        input_value_1 = st.select_slider(
+            'Selecione a id do usuário: ',
+        options=unique_users)
+        input_value_2 = st.slider('Número de Animes: ', 1, 30, 10)
+
+        self.show_anime_list_expander(self.user_item_list_recommendation(input_value_1, input_value_2))

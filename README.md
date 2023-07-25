@@ -14,7 +14,7 @@
 
 ## About
 
-In this project, we have developed an Anime Recommendation System based on user reviews from MyAnimeList (MAL). The system utilizes collaborative filtering and text processing techniques to provide personalized anime recommendations to users. For more detailed information, please check the [About Page](./about.md).
+In this project, we have developed an Anime Recommendation System based on user reviews from MyAnimeList (MAL). The system utilizes collaborative filtering and text processing techniques to provide personalized anime recommendations to users.
 
 ## How It Works
 
@@ -49,7 +49,20 @@ For more details on how the system works, please visit the [How It Works Page](m
 
 To get started with the Anime Recommendation System, follow these steps:
 
-1. Clone the repository:
+1.  Clone the repository:
 
 ```bash
 git clone https://github.com/vector-b/AnimeRecommendationSystem.git
+```
+2.  Install the required dependencies:
+ 
+```bash
+pip install -r requirements.txt
+```
+3.  Run the Streamlit app:
+```bash
+streamlit run app.py
+```
+
+License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

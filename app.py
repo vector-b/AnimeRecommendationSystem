@@ -19,8 +19,6 @@ AniRec, UsrRec = load_data()
 
 
 def app():
-
-
     st.title("Anime Recommendation System!")
 
     opt = st.radio(
@@ -34,11 +32,6 @@ def app():
     elif opt == 'User-Based Anime Recommendation':
         UsrRec.get_user_list_recommendation()
 
-
-
-    
-
-    
 
 if __name__ == "__main__":
     app()

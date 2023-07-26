@@ -4,6 +4,7 @@
 
 ## Table of Contents
 - [About](#about)
+- [Dataset](#dataset)
 - [How It Works](#how-it-works)
 - [Features](#features)
 - [Technologies Used](#technologies-used)
@@ -13,6 +14,9 @@
 ## About
 
 In this project, we have developed an Anime Recommendation System based on user reviews from MyAnimeList (MAL). The system utilizes collaborative filtering and text processing techniques to provide personalized anime recommendations to users.
+
+## Dataset
+The data used in this project can be found in [Kaggle](https://www.kaggle.com/datasets/hernan4444/anime-recommendation-database-2020)
 
 ## How It Works
 
